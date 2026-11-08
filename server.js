@@ -3,7 +3,7 @@ import axios from "axios";
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const API = "https://lagoslife.app/api";
 const LL_DEV = process.env.LL_DEV || "234z515j6u1w0z5i";
 const MAX_RETRIES = 9;
