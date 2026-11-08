@@ -311,4 +311,4 @@ app.get("/api/status", (req, res) => {
   res.json({ loggedIn: true, username: s.username, running: s.job.running, twofa: s.job.twofa ? { to: s.job.twofa.to, error: s.job.twofa.error, verifying: !!s.job.twofa.code } : null, logs: s.job.logs, progress: Object.values(s.job.progress) });
 });
 
-app.listen(PORT, "127.0.0.1", () => console.log(`http://localhost:${PORT}`));
+app.listen(PORT, "0.0.0.0", () => console.log(`http://localhost:${PORT}`));
