@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lagos Life Auto</title>
+<style>
+  :root {
+    --bg:#f4f6fb; --surface:#ffffff; --surface-2:#f0f3f9; --text:#141a29; --muted:#64708a; --line:#e2e7f1;
+    --accent:#4f46e5; --accent-2:#7c3aed; --accent-soft:#eef0ff; --ok:#059669; --ok-soft:#e6f6f0;
+    --danger:#dc2626; --danger-soft:#fdeceb; --warn:#b45309; --warn-soft:#fef3e2;
+    --shadow:0 1px 2px rgba(20,26,41,.05),0 8px 28px rgba(20,26,41,.07);
+    --glow:radial-gradient(900px 400px at 10% -10%,rgba(124,58,237,.14),transparent 60%),radial-gradient(800px 400px at 100% 0%,rgba(79,70,229,.12),transparent 55%);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#0b0e17; --surface:#131827; --surface-2:#1a2033; --text:#e8ebf4; --muted:#8a95b0; --line:#252c42;
+      --accent:#7c83ff; --accent-2:#a78bfa; --accent-soft:#1d2250; --ok:#34d399; --ok-soft:#10312a;
+      --danger:#f87171; --danger-soft:#3a1a1d; --warn:#fbbf24; --warn-soft:#3a2d12;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+      --glow:radial-gradient(900px 400px at 10% -10%,rgba(124,58,237,.22),transparent 60%),radial-gradient(800px 400px at 100% 0%,rgba(79,70,229,.2),transparent 55%);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; min-height:100vh; background:var(--bg) var(--glow) no-repeat; color:var(--text);
+    font:15px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif; padding:24px 16px 64px; }
+  h1,h2,h3 { margin:0; line-height:1.2; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+
+  /* ---------- buttons & inputs ---------- */
+  button { font:inherit; cursor:pointer; border:0; border-radius:10px; padding:10px 18px; font-weight:600;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#fff; transition:transform .08s,box-shadow .15s,opacity .15s; }
+  button:hover:not(:disabled) { box-shadow:0 6px 18px rgba(79,70,229,.35); }
+  button:active:not(:disabled) { transform:translateY(1px); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  button.secondary { background:var(--surface-2); color:var(--text); border:1px solid var(--line); }
+  button.secondary:hover:not(:disabled) { box-shadow:none; border-color:var(--accent); }
+  button.danger { background:var(--danger); }
+  button.danger:hover:not(:disabled) { box-shadow:0 6px 18px rgba(220,38,38,.3); }
+  button.block { width:100%; padding:12px; }
+  label { display:block; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .hint { font-size:12.5px; color:var(--muted); margin-top:6px; min-height:18px; }
+  .hint.warn { color:var(--warn); } .hint.err { color:var(--danger); }
+  input[type=text],input[type=password] { width:100%; padding:11px 13px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--text); font:inherit; outline:none; transition:border-color .15s,box-shadow .15s; }
+  input:focus,.chips:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .field-wrap { position:relative; }
+  .field-wrap .toggle { position:absolute; right:6px; top:50%; transform:translateY(-50%); padding:6px 10px; font-size:12px; background:transparent; color:var(--muted); border:0; }
+  .field-wrap .toggle:hover { box-shadow:none !important; color:var(--text); }
+
+  /* ---------- login ---------- */
+  #loginView { max-width:420px; margin:9vh auto 0; }
+  .brand { display:flex; align-items:center; gap:12px; margin-bottom:22px; justify-content:center; }
+  .logo { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; color:#fff; font-weight:800; font-size:20px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:0 8px 20px rgba(79,70,229,.35); }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:22px; box-shadow:var(--shadow); }
+  .card h2 { font-size:17px; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:13.5px; margin-bottom:18px; }
+  .stack > * + * { margin-top:16px; }
+  .banner-err { background:var(--danger-soft); color:var(--danger); border-radius:10px; padding:10px 12px; font-size:13.5px; }
+  .spinner { width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; display:inline-block; vertical-align:-3px; margin-right:8px; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ---------- app ---------- */
+  #appView { max-width:860px; margin:0 auto; }
+  header.top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  header.top .brand { margin:0; }
+  .user { display:flex; align-items:center; gap:10px; }
+  .avatar { width:34px; height:34px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; font-weight:700; text-transform:uppercase; }
+  .user small { display:block; color:var(--muted); font-size:12px; line-height:1.1; }
+  .user strong { font-size:14px; }
+  .layout { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:16px; align-items:start; }
+  @media (max-width:760px) { .layout { grid-template-columns:1fr; } }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:520px) { .grid2 { grid-template-columns:1fr; } }
+
+  .amount { font-size:17px; font-weight:600; letter-spacing:.01em; }
+  .words { display:inline-block; margin-top:6px; font-size:12.5px; font-weight:600; color:var(--accent); background:var(--accent-soft); padding:2px 9px; border-radius:999px; min-height:22px; }
+  .words:empty { display:none; }
+  .presets { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .presets button { padding:4px 10px; font-size:12px; border-radius:999px; font-weight:600; }
+
+  .chips { display:flex; flex-wrap:wrap; gap:6px; padding:7px; border-radius:10px; border:1px solid var(--line); background:var(--surface-2); }
+  .chips input { flex:1; min-width:120px; border:0; background:transparent; box-shadow:none !important; padding:5px 6px; }
+  .chip { display:inline-flex; align-items:center; gap:6px; background:var(--accent-soft); color:var(--accent); padding:4px 6px 4px 10px; border-radius:999px; font-size:13px; font-weight:600; }
+  .chip .n { background:var(--accent); color:#fff; width:18px; height:18px; border-radius:50%; display:grid; place-items:center; font-size:10px; }
+  .chip button { all:unset; cursor:pointer; width:18px; height:18px; text-align:center; border-radius:50%; line-height:18px; }
+  .chip button:hover { background:rgba(79,70,229,.2); }
+
+  .danger-zone { border:1.5px solid var(--warn); background:var(--warn-soft); border-radius:12px; padding:14px; }
+  .danger-zone input { background:var(--surface); }
+  .danger-zone input[readonly] { opacity:.75; cursor:not-allowed; }
+  .dz-head { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  .lock-badge { font-size:12px; font-weight:700; color:var(--warn); }
+  .dz-warn { font-size:13px; color:var(--text); background:var(--surface); border-left:4px solid var(--warn); border-radius:6px; padding:9px 11px; margin-bottom:10px; }
+  .dz-warn strong { display:block; color:var(--warn); margin-bottom:2px; }
+  .danger-zone .presets { display:none; }
+  .danger-zone.unlocked .presets { display:flex; }
+  .danger-zone.unlocked { border-color:var(--danger); }
+  .danger-zone.unlocked .lock-badge { color:var(--danger); }
+  .summary { background:var(--surface-2); border:1px dashed var(--line); border-radius:12px; padding:12px 14px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  @media (max-width:520px) { .summary { grid-template-columns:1fr 1fr; } }
+  .summary div span { display:block; font-size:11.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .summary div b { font-size:15px; }
+
+  .actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .actions .grow { flex:1; }
+
+  .status-pill { display:inline-flex; align-items:center; gap:8px; padding:4px 11px; border-radius:999px; font-size:12.5px; font-weight:600; background:var(--surface-2); color:var(--muted); }
+  .status-pill.run { background:var(--ok-soft); color:var(--ok); }
+  .dot { width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .run .dot { animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity:.25; transform:scale(.7); } }
+
+  .side > * + * { margin-top:16px; }
+  .prog { margin-top:14px; }
+  .prog:first-of-type { margin-top:0; }
+  .prog-head { display:flex; justify-content:space-between; gap:8px; font-size:13.5px; margin-bottom:6px; }
+  .prog-head .pct { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .bar { height:10px; background:var(--surface-2); border-radius:999px; overflow:hidden; border:1px solid var(--line); }
+  .bar > div { height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .4s; border-radius:999px; }
+  .bar.done > div { background:var(--ok); }
+  .prog-sub { font-size:12.5px; color:var(--muted); margin-top:5px; font-variant-numeric:tabular-nums; }
+  .empty { text-align:center; color:var(--muted); padding:18px 6px; font-size:13.5px; }
+
+  .log-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  #logs { background:var(--surface-2); border:1px solid var(--line); border-radius:10px; height:220px; overflow:auto; padding:8px 10px; font-size:12px; }
+  #logs div { padding:2px 0; word-break:break-word; }
+  #logs .ok { color:var(--ok); } #logs .err { color:var(--danger); } #logs .dim { color:var(--muted); }
+
+  /* ---------- modal & toast ---------- */
+  dialog { border:1px solid var(--line); border-radius:16px; background:var(--surface); color:var(--text); padding:24px; max-width:440px; width:calc(100% - 32px); box-shadow:var(--shadow); }
+  dialog::backdrop { background:rgba(8,10,20,.55); backdrop-filter:blur(3px); }
+  dialog h3 { margin-bottom:6px; }
+  .confirm-list { margin:14px 0 18px; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .confirm-list div { display:flex; justify-content:space-between; gap:12px; padding:9px 13px; font-size:14px; }
+  .confirm-list div + div { border-top:1px solid var(--line); }
+  .confirm-list span { color:var(--muted); } .confirm-list b { text-align:right; }
+  .confirm-list small { display:block; color:var(--accent); font-weight:600; }
+  #toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,20px); opacity:0; pointer-events:none; background:var(--text); color:var(--bg);
+    padding:10px 16px; border-radius:10px; font-size:14px; font-weight:500; transition:.25s; max-width:90vw; z-index:10; }
+  #toast.show { opacity:1; transform:translate(-50%,0); }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<section id="loginView" hidden>
+  <div class="brand"><div class="logo">L</div><div><h1>Lagos Life Auto</h1></div></div>
+  <form class="card stack" id="loginForm" autocomplete="on">
+    <div><h2>Welcome back</h2><p class="sub" style="margin:0">Sign in with your Lagos Life account to start sending.</p></div>
+    <div id="loginErr" class="banner-err" hidden></div>
+    <div><label for="username">Username</label><input type="text" id="username" autocomplete="username" autofocus required></div>
+    <div>
+      <label for="password">Password</label>
+      <div class="field-wrap"><input type="password" id="password" autocomplete="current-password" required>
+        <button type="button" class="toggle" id="togglePw">Show</button></div>
+    </div>
+    <button class="block" id="loginBtn" type="submit">Sign in</button>
+  </form>
+</section>
+
+<!-- ============ APP ============ -->
+<section id="appView" hidden>
+  <header class="top">
+    <div class="brand"><div class="logo">L</div><h1>Lagos Life Auto</h1></div>
+    <div class="user">
+      <span class="status-pill" id="pill"><span class="dot"></span><span id="pillText">Idle</span></span>
+      <div class="avatar" id="avatar">?</div>
+      <div><small>Signed in as</small><strong id="who"></strong></div>
+      <button class="secondary" id="logoutBtn" style="padding:7px 12px">Log out</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Transfer form -->
+    <form class="card stack" id="transferForm" autocomplete="off">
+      <div><h2>New transfer</h2><p class="sub" style="margin:0">Money is split evenly between recipients and sent in batches.</p></div>
+
+      <div>
+        <label for="recipientInput">Recipients</label>
+        <div class="chips" id="chips"><input type="text" id="recipientInput" placeholder="Type a username and press Enter"></div>
+        <div class="hint">Sent in the order shown. Usernames must match exactly.</div>
+      </div>
+
+      <div>
+        <label for="total">Total amount</label>
+        <input type="text" id="total" class="amount mono" inputmode="numeric" placeholder="0">
+        <span class="words" id="totalWords"></span>
+        <div class="presets" data-target="total"></div>
+      </div>
+
+      <div class="danger-zone" id="perZone">
+        <div class="dz-head">
+          <label for="per" style="margin:0">Amount per transaction</label>
+          <span class="lock-badge" id="perBadge">🔒 Locked</span>
+        </div>
+        <div class="dz-warn">
+          <strong>⚠ Do not change this unless you know exactly what you're doing.</strong>
+          This is the size of each batch sent to the buyer. A wrong value can send the wrong amount, trip the
+          game's limits, or cause failed and repeated transfers. The default is set for a reason.
+        </div>
+        <input type="text" id="per" class="amount mono" inputmode="numeric" placeholder="0" readonly>
+        <span class="words" id="perWords"></span>
+        <div class="presets" data-target="per"></div>
+        <div class="hint" id="perHint"></div>
+        <button type="button" class="secondary" id="perUnlock" style="margin-top:10px;padding:6px 12px;font-size:13px">I understand — unlock to edit</button>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <label for="delay">Wait between sends</label>
+          <div class="field-wrap"><input type="text" id="delay" class="mono" inputmode="numeric" value="31">
+            <span style="position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px">sec</span></div>
+        </div>
+        <div>
+          <label for="pin">Transfer PIN</label>
+          <div class="field-wrap"><input type="password" id="pin" class="mono" inputmode="numeric" autocomplete="off" placeholder="••••">
+            <button type="button" class="toggle" id="togglePin">Show</button></div>
+        </div>
+      </div>
+
+      <div class="summary" id="summary">
+        <div><span>Transactions</span><b id="sTx">–</b></div>
+        <div><span>Each recipient gets</span><b id="sShare">–</b></div>
+        <div><span>Estimated time</span><b id="sTime">–</b></div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="startBtn" class="grow" disabled>Review &amp; start</button>
+        <button type="button" id="stopBtn" class="danger" hidden>Stop</button>
+      </div>
+      <div class="hint err" id="formErr"></div>
+    </form>
+
+    <!-- Progress + log -->
+    <div class="side">
+      <div class="card">
+        <h2 style="margin-bottom:14px">Progress</h2>
+        <div id="progress"><div class="empty">Nothing running yet.<br>Fill in the form and start a transfer.</div></div>
+      </div>
+      <div class="card">
+        <div class="log-head"><h2>Activity log</h2><span class="hint" style="margin:0" id="logCount"></span></div>
+        <div id="logs" class="mono"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Confirm dialog -->
+<dialog id="confirm">
+  <h3>Confirm transfer</h3>
+  <p class="sub" style="margin:4px 0 0">Please double-check the amounts. Sends can't be undone.</p>
+  <div class="confirm-list" id="confirmList"></div>
+  <div class="actions">
+    <button class="secondary grow" id="cancelBtn" type="button">Cancel</button>
+    <button class="grow" id="confirmBtn" type="button">Yes, start sending</button>
+  </div>
+</dialog>
+<!-- Two-step code dialog -->
+<dialog id="twofa">
+  <form id="twofaForm" class="stack" autocomplete="off">
+    <div>
+      <h3>Verify it's you</h3>
+      <p class="sub" style="margin:4px 0 0">Lagos Life needs a two-step code to send this much. We've emailed a code to <b id="twofaTo"></b>.</p>
+    </div>
+    <div>
+      <label for="twofaCode">Code</label>
+      <input type="text" id="twofaCode" class="mono amount" inputmode="numeric" maxlength="8" placeholder="123456" style="text-align:center;letter-spacing:.35em">
+      <div class="hint err" id="twofaErr"></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="secondary" id="twofaStop">Stop transfer</button>
+      <button type="button" class="secondary" id="twofaResend">Resend code</button>
+      <button type="submit" class="grow" id="twofaBtn">Verify &amp; continue</button>
+    </div>
+  </form>
+</dialog>
+<div id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const post = (url, body) => fetch(url, { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(body||{}) })
+  .then(async r => ({ ok:r.ok, status:r.status, data:await r.json().catch(() => ({})) }));
+
+/* ---------- number helpers ---------- */
+const SCALES = [[10n**15n,"quadrillion"],[10n**12n,"trillion"],[10n**9n,"billion"],[10n**6n,"million"],[1000n,"thousand"]];
+const raw = el => el.value.replace(/\D/g, "");
+const big = s => (s ? BigInt(s) : 0n);
+const fmt = n => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+function words(n) {
+  if (n <= 0n) return "";
+  for (const [size, name] of SCALES) {
+    if (n >= size) {
+      const whole = n / size, frac = (n % size) * 100n / size;
+      const f = frac ? "." + frac.toString().padStart(2, "0").replace(/0+$/, "") : "";
+      return `${whole}${f} ${name}`;
+    }
+  }
+  return "";
+}
+function duration(sec) {
+  if (sec < 1) return "instant";
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = Math.round(sec % 60);
+  return [h && `${h}h`, m && `${m}m`, (s || (!h && !m)) && `${s}s`].filter(Boolean).join(" ");
+}
+
+/* comma-format as you type, keeping the caret in the right place */
+function bindAmount(id, wordsId, onChange) {
+  const el = $(id);
+  el.addEventListener("input", () => {
+    const digitsBeforeCaret = el.value.slice(0, el.selectionStart).replace(/\D/g, "").length;
+    const digits = raw(el).replace(/^0+(?=\d)/, "");
+    el.value = digits ? fmt(BigInt(digits)) : "";
+    let pos = 0, seen = 0;
+    while (pos < el.value.length && seen < digitsBeforeCaret) { if (/\d/.test(el.value[pos])) seen++; pos++; }
+    el.setSelectionRange(pos, pos);
+    $(wordsId).textContent = words(big(digits));
+    onChange();
+  });
+}
+function setAmount(id, wordsId, n) {
+  $(id).value = fmt(n); $(wordsId).textContent = words(n);
+}
+
+/* presets */
+const PRESETS = [["1M",10n**6n],["1B",10n**9n],["10B",10n**10n],["100B",10n**11n],["1T",10n**12n],["2.5T",25n*10n**11n]];
+document.querySelectorAll(".presets").forEach(box => {
+  const t = box.dataset.target, w = t + "Words";
+  for (const [label, val] of PRESETS) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "secondary"; b.textContent = label;
+    b.onclick = () => { setAmount(t, w, val); update(); };
+    box.appendChild(b);
+  }
+});
+
+/* ---------- recipients (chips) ---------- */
+let recipients = ["burner_for_test"];
+function renderChips() {
+  const box = $("chips");
+  box.querySelectorAll(".chip").forEach(c => c.remove());
+  recipients.forEach((name, i) => {
+    const c = document.createElement("span"); c.className = "chip";
+    const n = document.createElement("span"); n.className = "n"; n.textContent = i + 1;
+    const t = document.createElement("span"); t.textContent = name;
+    const x = document.createElement("button"); x.type = "button"; x.textContent = "×"; x.title = "Remove";
+    x.onclick = () => { recipients.splice(i, 1); renderChips(); update(); };
+    c.append(n, t, x);
+    box.insertBefore(c, $("recipientInput"));
+  });
+}
+function addRecipients(text) {
+  for (const name of text.split(/[\s,]+/).map(s => s.trim()).filter(Boolean)) {
+    if (!recipients.some(r => r.toLowerCase() === name.toLowerCase())) recipients.push(name);
+  }
+  renderChips(); update();
+}
+$("recipientInput").addEventListener("keydown", e => {
+  const el = e.target;
+  if (["Enter", ",", " "].includes(e.key) && el.value.trim()) { e.preventDefault(); addRecipients(el.value); el.value = ""; }
+  else if (e.key === "Backspace" && !el.value && recipients.length) { recipients.pop(); renderChips(); update(); }
+});
+$("recipientInput").addEventListener("paste", e => {
+  e.preventDefault(); addRecipients(e.clipboardData.getData("text"));
+});
+$("recipientInput").addEventListener("blur", e => { if (e.target.value.trim()) { addRecipients(e.target.value); e.target.value = ""; } });
+
+/* ---------- form state / summary ---------- */
+let running = false, loggedIn = false;
+function values() {
+  return { total: big(raw($("total"))), per: big(raw($("per"))), delay: Number(raw($("delay"))) || 0, pin: $("pin").value };
+}
+function validate() {
+  const v = values();
+  if (!recipients.length) return "Add at least one recipient.";
+  if (v.total <= 0n) return "Enter a total amount.";
+  if (v.per <= 0n) return "Enter an amount per transaction.";
+  if (!v.pin) return "Enter your transfer PIN.";
+  return "";
+}
+function update() {
+  const v = values();
+  const ok = v.total > 0n && v.per > 0n && recipients.length;
+  const ph = $("perHint");
+  ph.className = "hint"; ph.textContent = "";
+  if (v.per > 0n && v.total > 0n && v.per > v.total) { ph.className = "hint warn"; ph.textContent = "Larger than the total — it will be sent in one go."; }
+
+  if (ok) {
+    const n = BigInt(recipients.length), share = v.total / n, rem = v.total - share * n;
+    const perRecipientTx = (s) => (s + v.per - 1n) / v.per;
+    let tx = 0n;
+    recipients.forEach((_, i) => { tx += perRecipientTx(i === recipients.length - 1 ? share + rem : share); });
+    $("sTx").textContent = fmt(tx);
+    $("sShare").textContent = fmt(share) + (rem ? "+" : "");
+    $("sTime").textContent = duration(Number(tx - 1n) * v.delay);
+  } else { ["sTx","sShare","sTime"].forEach(i => $(i).textContent = "–"); }
+
+  $("startBtn").disabled = running || !loggedIn || !ok;
+  $("formErr").textContent = "";
+}
+bindAmount("total", "totalWords", update);
+bindAmount("per", "perWords", update);
+$("delay").addEventListener("input", e => { e.target.value = raw(e.target); update(); });
+$("pin").addEventListener("input", update);
+setAmount("total", "totalWords", 10n**12n);
+setAmount("per", "perWords", 10n**11n);
+
+/* per-transaction lock */
+const DEFAULT_PER = 10n**11n;
+$("perUnlock").onclick = () => {
+  const unlocked = !$("perZone").classList.contains("unlocked");
+  $("perZone").classList.toggle("unlocked", unlocked);
+  $("per").readOnly = !unlocked;
+  $("perBadge").textContent = unlocked ? "🔓 Unlocked — edit with care" : "🔒 Locked";
+  $("perUnlock").textContent = unlocked ? "Lock again & restore default" : "I understand — unlock to edit";
+  if (!unlocked) { setAmount("per", "perWords", DEFAULT_PER); update(); }
+  else $("per").focus();
+};
+
+/* show/hide password fields */
+function bindToggle(btn, input) {
+  $(btn).onclick = () => { const h = $(input).type === "password"; $(input).type = h ? "text" : "password"; $(btn).textContent = h ? "Hide" : "Show"; };
+}
+bindToggle("togglePw", "password"); bindToggle("togglePin", "pin");
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+/* ---------- login / logout ---------- */
+$("loginForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = $("loginBtn"); $("loginErr").hidden = true;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Signing in…';
+  const { ok, data } = await post("/api/login", { username:$("username").value.trim(), password:$("password").value });
+  btn.disabled = false; btn.textContent = "Sign in";
+  if (!ok) { $("loginErr").textContent = data.error || "Login failed."; $("loginErr").hidden = false; return; }
+  $("password").value = "";
+  toast("Signed in");
+  await poll(true);
+});
+$("logoutBtn").onclick = async () => { await post("/api/logout"); loggedIn = false; running = false; showView(); toast("Logged out"); };
+
+let shown = null;
+function showView() {
+  if (shown === loggedIn) return;
+  shown = loggedIn;
+  $("loginView").hidden = loggedIn;
+  $("appView").hidden = !loggedIn;
+  if (loggedIn) update();
+}
+
+/* ---------- start / stop ---------- */
+$("transferForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const err = validate();
+  if (err) { $("formErr").textContent = err; return; }
+  const v = values(), n = recipients.length;
+  const rows = [
+    ["Recipients", recipients.join(", ")],
+    ["Total", `${fmt(v.total)}${words(v.total) ? `<small>${words(v.total)}</small>` : ""}`],
+    ["Per transaction", `${fmt(v.per)}${words(v.per) ? `<small>${words(v.per)}</small>` : ""}`],
+    ["Each recipient gets", fmt(v.total / BigInt(n)) + (v.total % BigInt(n) ? " (+ remainder to last)" : "")],
+    ["Estimated time", $("sTime").textContent + ` · ${$("sTx").textContent} transactions`]
+  ];
+  $("confirmList").innerHTML = "";
+  for (const [k, val] of rows) {
+    const d = document.createElement("div");
+    const s = document.createElement("span"); s.textContent = k;
+    const b = document.createElement("b");
+    if (k === "Recipients") b.textContent = val; else b.innerHTML = val;
+    d.append(s, b); $("confirmList").appendChild(d);
+  }
+  $("confirm").showModal();
+});
+$("cancelBtn").onclick = () => $("confirm").close();
+$("confirmBtn").onclick = async () => {
+  $("confirm").close();
+  const v = values();
+  const { ok, data } = await post("/api/start", {
+    recipients, total:v.total.toString(), perTransaction:v.per.toString(), delay:v.delay * 1000, pin:v.pin
+  });
+  if (ok) toast("Transfer started"); else { $("formErr").textContent = data.error || "Could not start."; toast(data.error || "Could not start"); }
+  poll(true);
+};
+$("stopBtn").onclick = async () => { await post("/api/stop"); toast("Stopping after the current step…"); };
+
+/* ---------- two-step code ---------- */
+$("twofa").addEventListener("cancel", e => e.preventDefault()); // Esc must not dismiss it; use Stop
+$("twofaCode").addEventListener("input", e => { e.target.value = raw(e.target); });
+$("twofaForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const code = $("twofaCode").value;
+  if (code.length < 4) { $("twofaErr").textContent = "Enter the code from your email."; return; }
+  $("twofaBtn").disabled = true; $("twofaBtn").innerHTML = '<span class="spinner"></span>Verifying…';
+  const { ok, data } = await post("/api/2fa/code", { code });
+  if (!ok) { $("twofaErr").textContent = data.error || "Could not submit the code."; $("twofaBtn").disabled = false; $("twofaBtn").textContent = "Verify & continue"; }
+});
+$("twofaResend").onclick = async () => {
+  const { ok } = await post("/api/2fa/resend");
+  if (ok) toast("New code requested");
+};
+$("twofaStop").onclick = async () => { await post("/api/stop"); $("twofa").close(); toast("Stopping…"); };
+
+let lastTwofaErr = "";
+function renderTwofa(tf) {
+  const dlg = $("twofa");
+  if (!tf) { if (dlg.open) { dlg.close(); toast("Verified — continuing"); } lastTwofaErr = ""; return; }
+  if (!dlg.open) {
+    $("twofaCode").value = ""; $("twofaErr").textContent = "";
+    $("twofaBtn").disabled = false; $("twofaBtn").textContent = "Verify & continue";
+    dlg.showModal(); $("twofaCode").focus();
+  }
+  $("twofaTo").textContent = tf.to || "your email";
+  if (tf.error && tf.error !== lastTwofaErr) {
+    lastTwofaErr = tf.error;
+    $("twofaErr").textContent = tf.error;
+    $("twofaBtn").disabled = false; $("twofaBtn").textContent = "Verify & continue";
+    $("twofaCode").select();
+  } else if (!tf.error) { lastTwofaErr = ""; }
+}
+
+/* ---------- rendering server status ---------- */
+function renderProgress(list) {
+  const box = $("progress");
+  if (!list.length) { box.innerHTML = '<div class="empty">Nothing running yet.<br>Fill in the form and start a transfer.</div>'; return; }
+  box.innerHTML = "";
+  for (const p of list) {
+    const t = p.target ? BigInt(p.target) : 0n, r = p.remaining != null ? BigInt(p.remaining) : t;
+    const sent = t - r, pct = t > 0n ? Number(sent * 1000n / t) / 10 : 0;
+    const el = document.createElement("div"); el.className = "prog";
+    const head = document.createElement("div"); head.className = "prog-head";
+    const name = document.createElement("strong"); name.textContent = p.username;
+    const pc = document.createElement("span"); pc.className = "pct"; pc.textContent = p.done ? "Done ✓" : `${pct}%`;
+    head.append(name, pc);
+    const bar = document.createElement("div"); bar.className = "bar" + (p.done ? " done" : "");
+    const fill = document.createElement("div"); fill.style.width = pct + "%"; bar.appendChild(fill);
+    const sub = document.createElement("div"); sub.className = "prog-sub";
+    sub.textContent = t > 0n ? `${fmt(sent)} of ${fmt(t)} sent · ${fmt(r)} left` : "Waiting…";
+    el.append(head, bar, sub); box.appendChild(el);
+  }
+}
+let lastLogLen = -1;
+function renderLogs(lines) {
+  if (lines.length === lastLogLen) return;
+  lastLogLen = lines.length;
+  const el = $("logs"), atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  el.innerHTML = "";
+  for (const line of lines) {
+    const d = document.createElement("div");
+    const m = /→ (\d{3})/.exec(line);
+    if (/ERROR|Network error|failed/i.test(line) || (m && m[1][0] !== "2")) d.className = "err";
+    else if ((m && m[1][0] === "2") || /Finished|Done with/.test(line)) d.className = "ok";
+    else if (/Waiting|Attempt|Resolved/.test(line)) d.className = "dim";
+    d.textContent = line; el.appendChild(d);
+  }
+  $("logCount").textContent = lines.length ? `${lines.length} entries` : "";
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+function renderState(s) {
+  const was = running;
+  loggedIn = s.loggedIn; running = !!s.running;
+  showView();
+  if (!loggedIn) return;
+  $("who").textContent = s.username || "";
+  $("avatar").textContent = (s.username || "?")[0];
+  $("pill").className = "status-pill" + (running ? " run" : "");
+  $("pillText").textContent = running ? "Sending…" : "Idle";
+  $("stopBtn").hidden = !running;
+  $("startBtn").hidden = running;
+  renderProgress(s.progress || []); renderLogs(s.logs || []); renderTwofa(s.twofa);
+  if (s.twofa) $("pillText").textContent = "Waiting for code";
+  if (was && !running) toast("Transfer finished");
+  if (was !== running) update();
+}
+
+let pollTimer;
+async function poll() {
+  clearTimeout(pollTimer);
+  try { renderState(await (await fetch("/api/status")).json()); } catch {}
+  pollTimer = setTimeout(poll, 1000);
+}
+renderChips(); update(); poll();
+</script>
+</body>
+</html>

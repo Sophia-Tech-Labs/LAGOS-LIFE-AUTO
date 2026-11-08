@@ -1,0 +1,6 @@
+node_modules/
+sessions.json
+sessions.json.tmp
+balances.*.json
+balances.*.json.tmp
+.env
